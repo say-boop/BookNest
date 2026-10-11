@@ -2,15 +2,9 @@ from sqlalchemy import String, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Enum as SQLEnum
 from datetime import datetime
-from enum import Enum
 
 from app.core.database import Base
-
-
-class BookStatus(str, Enum):
-    FIRST = "I will be reading"
-    SECOND = "Reading"
-    THIRD = "I read it"
+from app.core.enums import BookStatus
 
 
 class Book(Base):

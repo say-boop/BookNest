@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
-from app.models import BookStatus
+from app.core.enums import BookStatus
 
 
 class BookBase(BaseModel):
@@ -15,9 +15,9 @@ class BookCreate(BookBase):
 
 
 class BookUpdate(BaseModel):
-    title: str | None
-    author: str | None
-    status: BookStatus | None
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    author: str | None = Field(default=None, min_length=1, max_length=150)
+    status: BookStatus | None = None
 
 
 class BookResponse(BookBase):
