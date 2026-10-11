@@ -40,7 +40,7 @@ class BookRepository:
 
     async def get_by_id_rep(
         self,
-        book_id
+        book_id: int
     ) -> Book | None:
         query = select(Book).where(Book.id == book_id)
         result = await self.session.execute(query)
@@ -48,11 +48,20 @@ class BookRepository:
 
         return book
 
-    async def save_update_repo(
+    async def save_update_book_repo(
         self,
-        book
-    ):
+        book: Book
+    ) -> Book:
         await self.session.commit()
         await self.session.refresh(book)
+
+        return book
+
+    async def delete_book_repo(
+        self,
+        book: Book
+    ) -> Book:
+        await self.session.delete(book)
+        await self.session.commit()
 
         return book

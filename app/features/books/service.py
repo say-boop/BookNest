@@ -53,6 +53,24 @@ class BookService:
         for key, value in clean_data.items():
             setattr(book_repo, key, value)
 
-        result_save = await self.repository.save_update_repo(book_repo)
+        result_save = await self.repository.save_update_book_repo(book_repo)
 
         return result_save
+
+    async def delete_book_ser(
+        self,
+        book_id: int
+    ):
+        book_repo = await self.repository.get_by_id_rep(book_id)
+
+        if book_repo is None:
+            raise BookNotFoundError(
+                message="Книга не найдена."
+            )
+
+        await self.repository.delete_book_repo(book_repo)
+
+        return {
+            "status": "success",
+            "detail": f"Книга '{book_repo.title}' успешно удалена."
+        }

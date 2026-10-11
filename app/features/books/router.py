@@ -50,3 +50,15 @@ async def update_book(
     repository = BookRepository(session)
     service = BookService(repository)
     return await service.update_book_ser(book_id, payload)
+
+
+@router_books.delete(
+    "/{book_id}"
+)
+async def delete_book(
+    book_id: int,
+    session: AsyncSession = Depends(get_db)
+):
+    repository = BookRepository(session)
+    service = BookService(repository)
+    return await service.delete_book_ser(book_id)
