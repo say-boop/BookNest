@@ -9,7 +9,7 @@ class BookRepository:
         self.session = session
 
 
-    async def add_book_rep(
+    async def add_book(
         self,
         book: Book
     ) -> Book:
@@ -19,7 +19,7 @@ class BookRepository:
 
         return book
 
-    async def get_by_title_and_author_rep(
+    async def get_by_title_and_author(
         self,
         book: Book
     ) -> Book | None:
@@ -29,7 +29,7 @@ class BookRepository:
 
         return existing_book
 
-    async def get_all_books_rep(
+    async def get_all_books(
         self
     ) -> list[Book]:
         query = select(Book)
@@ -38,7 +38,7 @@ class BookRepository:
 
         return books
 
-    async def get_by_id_rep(
+    async def get_by_id(
         self,
         book_id: int
     ) -> Book | None:
@@ -48,7 +48,7 @@ class BookRepository:
 
         return book
 
-    async def save_update_book_repo(
+    async def save_book(
         self,
         book: Book
     ) -> Book:
@@ -57,7 +57,7 @@ class BookRepository:
 
         return book
 
-    async def delete_book_repo(
+    async def delete_book(
         self,
         book: Book
     ) -> Book:

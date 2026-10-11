@@ -8,40 +8,38 @@ class BookService:
     def __init__(self, repository: BookRepository):
         self.repository = repository
 
-    async def create_book_ser(
+    async def create_book(
         self, 
         book_in: BookCreate
     ) -> Book:
         book = Book(**book_in.model_dump())
-        result_get_book_repo = await self.repository.get_by_title_and_author_rep(book)
+        result_get_book_repo = await self.repository.get_by_title_and_author(book)
 
         if result_get_book_repo is not None:
             raise BookAlreadyExistsError(
                 message=f"Книга с заголовком: {book.title} и автором: {book.author} существует."
             )
 
-        result_book = await self.repository.add_book_rep(book)
+        result_book = await self.repository.add_book(book)
 
         return result_book
 
-    async def get_books_ser(
+    async def get_books(
         self
     ) -> list[Book]:
-        result_get_all_book_repo = await self.repository.get_all_books_rep()
+        result_get_all_book_repo = await self.repository.get_all_books()
 
         if len(result_get_all_book_repo) <= 0:
-            raise BookNotFoundError(
-                message="Книги не найдены."
-            )
+            return []
 
         return result_get_all_book_repo
 
-    async def update_book_ser(
+    async def update_book(
         self, 
         book_id: int, 
         payload: BookUpdate
     ) -> Book:
-        book_repo = await self.repository.get_by_id_rep(book_id)
+        book_repo = await self.repository.get_by_id(book_id)
 
         if book_repo is None:
             raise BookNotFoundError(
@@ -53,22 +51,22 @@ class BookService:
         for key, value in clean_data.items():
             setattr(book_repo, key, value)
 
-        result_save = await self.repository.save_update_book_repo(book_repo)
+        result_save = await self.repository.save_book(book_repo)
 
         return result_save
 
-    async def delete_book_ser(
+    async def delete_book(
         self,
         book_id: int
     ):
-        book_repo = await self.repository.get_by_id_rep(book_id)
+        book_repo = await self.repository.get_by_id(book_id)
 
         if book_repo is None:
             raise BookNotFoundError(
                 message="Книга не найдена."
             )
 
-        await self.repository.delete_book_repo(book_repo)
+        await self.repository.delete_book(book_repo)
 
         return {
             "status": "success",
