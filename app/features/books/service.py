@@ -1,7 +1,7 @@
 from app.features.books.models import Book
 from app.features.books.schemas import BookCreate
 from app.features.books.repository import BookRepository
-from app.core.exceptions.base import BookAlreadyExistsError
+from app.core.exceptions.base import BookAlreadyExistsError, BookNotFoundError
 
 
 class BookService:
@@ -20,3 +20,13 @@ class BookService:
         result_book = await self.repository.add_book(book)
 
         return result_book
+
+    async def get_books(self):
+        result_get_all_book_repo = await self.repository.get_all_books()
+
+        if len(result_get_all_book_repo) <= 0:
+            raise BookNotFoundError(
+                message=f"Книги не найдены."
+            )
+
+        return result_get_all_book_repo

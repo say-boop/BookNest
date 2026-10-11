@@ -28,3 +28,10 @@ class BookRepository:
         existing_book = result.scalar_one_or_none()
 
         return existing_book
+
+    async def get_all_books(self):
+        query = select(Book)
+        result = await self.session.execute(query)
+        books = result.scalars().all()
+
+        return books
