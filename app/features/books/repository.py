@@ -9,7 +9,7 @@ class BookRepository:
         self.session = session
 
 
-    async def add_book(
+    async def add_book_rep(
         self,
         book: Book
     ) -> Book:
@@ -19,9 +19,9 @@ class BookRepository:
 
         return book
 
-    async def get_by_title_and_author(
-            self,
-            book: Book
+    async def get_by_title_and_author_rep(
+        self,
+        book: Book
     ) -> Book | None:
         query = select(Book).where(Book.title == book.title, Book.author == book.author)
         result = await self.session.execute(query)
@@ -29,9 +29,30 @@ class BookRepository:
 
         return existing_book
 
-    async def get_all_books(self):
+    async def get_all_books_rep(
+        self
+    ) -> list[Book]:
         query = select(Book)
         result = await self.session.execute(query)
         books = result.scalars().all()
 
         return books
+
+    async def get_by_id_rep(
+        self,
+        book_id
+    ) -> Book | None:
+        query = select(Book).where(Book.id == book_id)
+        result = await self.session.execute(query)
+        book = result.scalar_one_or_none()
+
+        return book
+
+    async def save_update_repo(
+        self,
+        book
+    ):
+        await self.session.commit()
+        await self.session.refresh(book)
+
+        return book

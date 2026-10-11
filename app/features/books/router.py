@@ -21,7 +21,7 @@ async def add_book(
 ):
     repository = BookRepository(session)
     service = BookService(repository)
-    return await service.create_book(book_in)
+    return await service.create_book_ser(book_in)
 
 
 @router_books.get(
@@ -34,4 +34,19 @@ async def get_all_books(
 ):
     repository = BookRepository(session)
     service = BookService(repository)
-    return await service.get_books()
+    return await service.get_books_ser()
+
+
+@router_books.patch(
+    "/{book_id}",
+    response_model=BookResponse,
+    status_code=status.HTTP_200_OK
+)
+async def update_book(
+    book_id: int,
+    payload: BookUpdate,
+    session: AsyncSession = Depends(get_db)
+):
+    repository = BookRepository(session)
+    service = BookService(repository)
+    return await service.update_book_ser(book_id, payload)
