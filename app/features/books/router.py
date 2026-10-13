@@ -62,3 +62,16 @@ async def delete_book(
     repository = BookRepository(session)
     service = BookService(repository)
     return await service.delete_book(book_id)
+
+
+@router_books.patch(
+    "/{id}/rating"
+)
+async def add_rating_book(
+    book_id: int,
+    rating: int,
+    session: AsyncSession = Depends(get_db)
+):
+    repository = BookRepository(session)
+    service = BookService(repository)
+    return await service.rating_add_book(book_id, rating)

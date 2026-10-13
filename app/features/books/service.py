@@ -72,3 +72,19 @@ class BookService:
             "status": "success",
             "detail": f"Книга '{book_repo.title}' успешно удалена."
         }
+
+    async def rating_add_book(
+        self,
+        book_id: int,
+        rating: int
+    ):
+        book_repo = await self.repository.get_by_id(book_id)
+
+        if book_repo is None:
+            raise BookNotFoundError(
+                message="Книга не найдена"
+            )
+
+        result_rating_update = await self.repository.rating_update_book(book_id, rating)
+
+        return result_rating_update
