@@ -17,11 +17,17 @@ class BookCreate(BookBase):
 class BookUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=100)
     author: str | None = Field(default=None, min_length=1, max_length=150)
+    rating: int | None = Field(default=None, ge=1, gt=10)
     status: BookStatus | None = None
+
+
+class BookRatingUpdate(BaseModel):
+    rating: int | None = Field(default=None, ge=1, gt=10)
 
 
 class BookResponse(BookBase):
     id: int
+    rating: int | None
     created_at: datetime
     updated_at: datetime
 

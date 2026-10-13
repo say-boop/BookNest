@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.features.books.schemas import BookCreate, BookUpdate, BookResponse
+from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate
 from app.features.books.service import BookService
 from app.features.books.repository import BookRepository
 
@@ -62,3 +62,16 @@ async def delete_book(
     repository = BookRepository(session)
     service = BookService(repository)
     return await service.delete_book(book_id)
+
+
+@router_books.patch(
+    "/{id}/rating"
+)
+async def add_rating_book(
+    book_id: int,
+    rating: BookRatingUpdate,
+    session: AsyncSession = Depends(get_db)
+):
+    repository = BookRepository(session)
+    service = BookService(repository)
+    return await service.rating_add_book(book_id, rating)
