@@ -1,4 +1,4 @@
-from sqlalchemy import String, func
+from sqlalchemy import String, func, CheckConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Enum as SQLEnum
 from datetime import datetime
@@ -14,6 +14,7 @@ class Book(Base):
 
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     author: Mapped[str] = mapped_column(String(150), nullable=False)
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[BookStatus] = mapped_column(
         SQLEnum(BookStatus),
         default=BookStatus.FIRST,
@@ -28,4 +29,8 @@ class Book(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("rating >= 1 AND rating <= 10", name="check_rating_range")
     )
