@@ -65,3 +65,19 @@ class BookRepository:
         await self.session.commit()
 
         return book
+
+    async def rating_update_book(
+        self,
+        book_id: int,
+        rating: int
+    ) -> Book | None:
+        query = select(Book).where(Book.id == book_id)
+        result = await self.session.execute(query)
+        book = result.scalar_one_or_none()
+
+        if book:
+            book.rating = rating
+            await self.session.commit()
+            await self.session.refresh(book)
+
+        return book
