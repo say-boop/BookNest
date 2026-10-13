@@ -32,5 +32,5 @@ class Book(Base):
     )
 
     __table_args__ = (
-        CheckConstraint("rating >= 1 AND rating <= 10", name="check_rating_range")
+        CheckConstraint("rating >= 1 AND rating <= 10", name="check_rating_range"),
     )
