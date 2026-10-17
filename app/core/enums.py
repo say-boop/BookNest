@@ -2,6 +2,6 @@ from enum import Enum
 
 
 class BookStatus(str, Enum):
-    FIRST = "I will be reading"
-    SECOND = "Reading"
-    THIRD = "I read it"
+    want_to_read = "I will be reading"
+    reading = "Reading"
+    read = "I read it"
