@@ -17,7 +17,7 @@ class Book(Base):
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[BookStatus] = mapped_column(
         SQLEnum(BookStatus),
-        default=BookStatus.FIRST,
+        default=BookStatus.want_to_read,
         nullable=False
     )
 

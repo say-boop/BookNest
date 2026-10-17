@@ -1,13 +1,22 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.features.books.models import Book
+from app.core.enums import BookStatus
+
+
+SORT_MAPPING = {
+    "created_at": Book.created_at,
+    "rating": Book.rating
+}
+
+DEFAULT_SORT_COLUMN = Book.created_at
 
 
 class BookRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
-
+    
 
     async def add_book(
         self,
@@ -30,9 +39,26 @@ class BookRepository:
         return existing_book
 
     async def get_all_books(
-        self
+        self,
+        status: BookStatus | None = None,
+        search: str | None = None,
+        sort: str | None = None,
+        order: str = "asc"
     ) -> list[Book]:
         query = select(Book)
+        
+        if status is not None:
+            query = query.where(Book.status == status)
+        elif search is not None and search.strip():
+            query = query.where(or_(Book.title.like(f"%{search}%"), Book.author.like(f"%{search}%")))
+        elif sort is not None:
+            sort_column = SORT_MAPPING.get(sort, DEFAULT_SORT_COLUMN)
+
+            if order.lower() == "desc":
+                query = query.order_by(sort_column.desc().nulls_last())
+            else:
+                query = query.order_by(sort_column.asc().nulls_last())
+        
         result = await self.session.execute(query)
         books = result.scalars().all()
 
