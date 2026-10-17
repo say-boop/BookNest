@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.features.books.models import Book
+from app.core.enums import BookStatus
 
 
 class BookRepository:
@@ -30,9 +31,14 @@ class BookRepository:
         return existing_book
 
     async def get_all_books(
-        self
+        self,
+        status: BookStatus | None = None
     ) -> list[Book]:
-        query = select(Book)
+        if status is not None:
+            query = select(Book).where(Book.status == status)
+        else:
+            query = select(Book)
+        
         result = await self.session.execute(query)
         books = result.scalars().all()
 

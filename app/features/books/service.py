@@ -2,6 +2,7 @@ from app.features.books.models import Book
 from app.features.books.schemas import BookCreate, BookUpdate
 from app.features.books.repository import BookRepository
 from app.core.exceptions.base import BookAlreadyExistsError, BookNotFoundError
+from app.core.enums import BookStatus
 
 
 class BookService:
@@ -25,12 +26,10 @@ class BookService:
         return result_book
 
     async def get_books(
-        self
+        self,
+        status: BookStatus | None = None
     ) -> list[Book]:
-        result_get_all_book_repo = await self.repository.get_all_books()
-
-        if len(result_get_all_book_repo) <= 0:
-            return []
+        result_get_all_book_repo = await self.repository.get_all_books(status)
 
         return result_get_all_book_repo
 

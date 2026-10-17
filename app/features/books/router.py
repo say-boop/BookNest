@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.enums import BookStatus
 from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate
 from app.features.books.service import BookService
 from app.features.books.repository import BookRepository
@@ -30,11 +31,12 @@ async def add_book(
     status_code=status.HTTP_200_OK
 )
 async def get_all_books(
+    status: BookStatus | None = None,
     session: AsyncSession = Depends(get_db)
 ):
     repository = BookRepository(session)
     service = BookService(repository)
-    return await service.get_books()
+    return await service.get_books(status=status)
 
 
 @router_books.patch(
