@@ -32,11 +32,12 @@ async def add_book(
 )
 async def get_all_books(
     status: BookStatus | None = None,
+    search: str | None = None,
     session: AsyncSession = Depends(get_db)
 ):
     repository = BookRepository(session)
     service = BookService(repository)
-    return await service.get_books(status=status)
+    return await service.get_books(status=status, search=search)
 
 
 @router_books.patch(

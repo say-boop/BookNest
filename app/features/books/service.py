@@ -27,9 +27,10 @@ class BookService:
 
     async def get_books(
         self,
-        status: BookStatus | None = None
+        status: BookStatus | None = None,
+        search: str | None = None
     ) -> list[Book]:
-        result_get_all_book_repo = await self.repository.get_all_books(status)
+        result_get_all_book_repo = await self.repository.get_all_books(status=status, search=search)
 
         return result_get_all_book_repo
 

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.features.books.models import Book
 from app.core.enums import BookStatus
@@ -32,10 +32,13 @@ class BookRepository:
 
     async def get_all_books(
         self,
-        status: BookStatus | None = None
+        status: BookStatus | None = None,
+        search: str | None = None
     ) -> list[Book]:
         if status is not None:
             query = select(Book).where(Book.status == status)
+        elif search is not None and search.strip():
+            query = select(Book).where(or_(Book.title.like(f"%{search}%"), Book.author.like(f"%{search}%")))
         else:
             query = select(Book)
         
