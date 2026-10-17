@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Literal
 
 from app.core.database import get_db
 from app.core.enums import BookStatus
@@ -33,11 +34,18 @@ async def add_book(
 async def get_all_books(
     status: BookStatus | None = None,
     search: str | None = None,
+    sort: Literal["created_at", "rating"] | None = None,
+    order: Literal["asc", "desc"] = "asc",
     session: AsyncSession = Depends(get_db)
 ):
     repository = BookRepository(session)
     service = BookService(repository)
-    return await service.get_books(status=status, search=search)
+    return await service.get_books(
+        status=status, 
+        search=search, 
+        sort=sort, 
+        order=order
+    )
 
 
 @router_books.patch(
@@ -68,7 +76,7 @@ async def delete_book(
 
 
 @router_books.patch(
-    "/{id}/rating"
+    "/{book_id}/rating"
 )
 async def add_rating_book(
     book_id: int,
@@ -77,4 +85,4 @@ async def add_rating_book(
 ):
     repository = BookRepository(session)
     service = BookService(repository)
-    return await service.rating_add_book(book_id, rating)
+    return await service.rating_add_book(book_id, rating=rating.rating)
