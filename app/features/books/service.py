@@ -32,13 +32,17 @@ class BookService:
         status: BookStatus | None = None,
         search: str | None = None,
         sort: str | None = None,
-        order: str = "asc"
+        order: str = "asc",
+        limit: int = 10,
+        offset: int = 0
     ) -> list[Book]:
         result_get_all_book_repo = await self.repository.get_all_books(
             status=status, 
             search=search, 
             sort=sort, 
-            order=order
+            order=order,
+            limit=limit,
+            offset=offset
         )
 
         return result_get_all_book_repo

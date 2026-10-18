@@ -1,10 +1,10 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Literal
 
 from app.core.database import get_db
 from app.core.enums import BookStatus
-from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate
+from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate, BookPaginatedResponse
 from app.features.books.service import BookService
 from app.features.books.repository import BookRepository
 
@@ -28,7 +28,7 @@ async def add_book(
 
 @router_books.get(
     "",
-    response_model=list[BookResponse],
+    response_model=BookPaginatedResponse,
     status_code=status.HTTP_200_OK
 )
 async def get_all_books(
@@ -36,6 +36,8 @@ async def get_all_books(
     search: str | None = None,
     sort: Literal["created_at", "rating"] | None = None,
     order: Literal["asc", "desc"] = "asc",
+    limit: int = Query(default=10, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
     session: AsyncSession = Depends(get_db)
 ):
     repository = BookRepository(session)
@@ -44,7 +46,9 @@ async def get_all_books(
         status=status, 
         search=search, 
         sort=sort, 
-        order=order
+        order=order,
+        limit=limit,
+        offset=offset
     )
 
 

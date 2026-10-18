@@ -37,3 +37,8 @@ class BookResponse(BookBase):
     model_config = ConfigDict(
         from_attributes=True
     )
+
+
+class BookPaginatedResponse(BaseModel):
+    total: int
+    items: list[BookResponse]

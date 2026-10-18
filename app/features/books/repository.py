@@ -44,9 +44,11 @@ class BookRepository:
         status: BookStatus | None = None,
         search: str | None = None,
         sort: str | None = None,
-        order: str = "asc"
+        order: str = "asc",
+        limit: int = 10,
+        offset: int = 0
     ) -> list[Book]:
-        query = select(Book)
+        query = select(Book).offset(offset).limit(limit)
         
         if status is not None:
             query = query.where(Book.status == status)
@@ -63,7 +65,10 @@ class BookRepository:
         result = await self.session.execute(query)
         books = result.scalars().all()
 
-        return books
+        return {
+            "total": len(books),
+            "items": books
+        }
 
     async def get_by_id(
         self,
