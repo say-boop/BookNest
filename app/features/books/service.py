@@ -11,6 +11,7 @@ class BookService:
     def __init__(self, repository: BookRepository):
         self.repository = repository
 
+
     async def create_book(
         self, 
         book_in: BookCreate
@@ -26,6 +27,7 @@ class BookService:
         result_book = await self.repository.add_book(book)
 
         return result_book
+
 
     async def get_books(
         self,
@@ -46,6 +48,7 @@ class BookService:
         )
 
         return result_get_all_book_repo
+
 
     async def update_book(
         self, 
@@ -76,6 +79,7 @@ class BookService:
 
         return result_save
 
+
     async def delete_book(
         self,
         book_id: int
@@ -94,6 +98,7 @@ class BookService:
             "detail": f"Книга '{book_repo.title}' успешно удалена."
         }
 
+
     async def rating_add_book(
         self,
         book_id: int,
@@ -109,3 +114,15 @@ class BookService:
         result_rating_update = await self.repository.rating_update_book(book_id, rating)
 
         return result_rating_update
+
+
+    async def get_stats(
+        self
+    ):
+        list_status = await self.repository.get_by_count_read()
+        result = {}
+
+        for i in list_status:
+            result[i.get("status")] = i.get("count")
+
+        return result

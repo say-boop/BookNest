@@ -42,3 +42,9 @@ class BookResponse(BookBase):
 class BookPaginatedResponse(BaseModel):
     total: int
     items: list[BookResponse]
+
+
+class BookStatsResponse(BaseModel):
+    want_to_read: int
+    reading: int
+    read: int

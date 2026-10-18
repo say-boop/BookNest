@@ -1,6 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
-from typing import Any
+from sqlalchemy import select, or_, func
 
 from app.features.books.models import Book
 from app.core.enums import BookStatus
@@ -29,6 +28,7 @@ class BookRepository:
 
         return book
 
+
     async def get_by_title_and_author(
         self,
         book: Book
@@ -38,6 +38,7 @@ class BookRepository:
         existing_book = result.scalar_one_or_none()
 
         return existing_book
+
 
     async def get_all_books(
         self,
@@ -70,6 +71,7 @@ class BookRepository:
             "items": books
         }
 
+
     async def get_by_id(
         self,
         book_id: int
@@ -80,6 +82,20 @@ class BookRepository:
 
         return book
 
+
+    async def get_by_count_read(
+        self
+    ):
+        query = select(Book.status, func.count(Book.id).label("count")).group_by(Book.status)
+        result = await self.session.execute(query)
+        rows = result.all()
+
+        return [{
+            "status": row.status,
+            "count": row.count
+        } for row in rows]
+
+
     async def save_book(
         self,
         book: Book
@@ -89,6 +105,7 @@ class BookRepository:
 
         return book
 
+
     async def delete_book(
         self,
         book: Book
@@ -97,6 +114,7 @@ class BookRepository:
         await self.session.commit()
 
         return book
+
 
     async def rating_update_book(
         self,

@@ -4,7 +4,7 @@ from typing import Literal
 
 from app.core.database import get_db
 from app.core.enums import BookStatus
-from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate, BookPaginatedResponse
+from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate, BookPaginatedResponse, BookStatsResponse
 from app.features.books.service import BookService
 from app.features.books.repository import BookRepository
 
@@ -50,6 +50,18 @@ async def get_all_books(
         limit=limit,
         offset=offset
     )
+
+
+@router_books.get(
+    "/stats",
+    response_model=BookStatsResponse
+)
+async def get_stats(
+    session: AsyncSession = Depends(get_db)
+):
+    repository = BookRepository(session)
+    service = BookService(repository)
+    return await service.get_stats()
 
 
 @router_books.patch(
