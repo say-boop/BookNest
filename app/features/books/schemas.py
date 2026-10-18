@@ -11,7 +11,7 @@ class BookBase(BaseModel):
 
 
 class BookCreate(BookBase):
-    pass
+    note: str | None = Field(default=None, max_length=300)
 
 
 class BookUpdate(BaseModel):
@@ -19,6 +19,7 @@ class BookUpdate(BaseModel):
     author: str | None = Field(default=None, min_length=1, max_length=150)
     rating: int | None = Field(default=None, ge=1, le=10)
     status: BookStatus | None = None
+    note: str | None = Field(default=None, max_length=300)
 
 
 class BookRatingUpdate(BaseModel):
@@ -28,6 +29,7 @@ class BookRatingUpdate(BaseModel):
 class BookResponse(BookBase):
     id: int
     rating: int | None
+    note: str | None
     created_at: datetime
     updated_at: datetime
 
