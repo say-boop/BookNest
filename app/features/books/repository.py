@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func
 
 from app.features.books.models import Book
 from app.core.enums import BookStatus
@@ -28,6 +28,7 @@ class BookRepository:
 
         return book
 
+
     async def get_by_title_and_author(
         self,
         book: Book
@@ -38,14 +39,17 @@ class BookRepository:
 
         return existing_book
 
+
     async def get_all_books(
         self,
         status: BookStatus | None = None,
         search: str | None = None,
         sort: str | None = None,
-        order: str = "asc"
+        order: str = "asc",
+        limit: int = 10,
+        offset: int = 0
     ) -> list[Book]:
-        query = select(Book)
+        query = select(Book).offset(offset).limit(limit)
         
         if status is not None:
             query = query.where(Book.status == status)
@@ -62,7 +66,11 @@ class BookRepository:
         result = await self.session.execute(query)
         books = result.scalars().all()
 
-        return books
+        return {
+            "total": len(books),
+            "items": books
+        }
+
 
     async def get_by_id(
         self,
@@ -74,6 +82,20 @@ class BookRepository:
 
         return book
 
+
+    async def get_by_count_read(
+        self
+    ):
+        query = select(Book.status, func.count(Book.id).label("count")).group_by(Book.status)
+        result = await self.session.execute(query)
+        rows = result.all()
+
+        return [{
+            "status": row.status,
+            "count": row.count
+        } for row in rows]
+
+
     async def save_book(
         self,
         book: Book
@@ -83,6 +105,7 @@ class BookRepository:
 
         return book
 
+
     async def delete_book(
         self,
         book: Book
@@ -91,6 +114,7 @@ class BookRepository:
         await self.session.commit()
 
         return book
+
 
     async def rating_update_book(
         self,

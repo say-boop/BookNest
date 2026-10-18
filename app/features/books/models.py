@@ -15,6 +15,7 @@ class Book(Base):
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     author: Mapped[str] = mapped_column(String(150), nullable=False)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    note: Mapped[str | None] = mapped_column(String(300), nullable=True)
     status: Mapped[BookStatus] = mapped_column(
         SQLEnum(BookStatus),
         default=BookStatus.want_to_read,
@@ -29,6 +30,9 @@ class Book(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now()
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        nullable=True
     )
 
     __table_args__ = (
