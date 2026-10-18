@@ -32,6 +32,7 @@ class BookResponse(BookBase):
     note: str | None
     created_at: datetime
     updated_at: datetime
+    finished_at: datetime | None
 
     model_config = ConfigDict(
         from_attributes=True

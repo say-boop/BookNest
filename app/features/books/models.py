@@ -31,6 +31,9 @@ class Book(Base):
         server_default=func.now(),
         onupdate=func.now()
     )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        nullable=True
+    )
 
     __table_args__ = (
         CheckConstraint("rating >= 1 AND rating <= 10", name="check_rating_range"),

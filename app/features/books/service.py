@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.features.books.models import Book
 from app.features.books.schemas import BookCreate, BookUpdate
 from app.features.books.repository import BookRepository
@@ -54,9 +56,17 @@ class BookService:
             )
 
         clean_data = payload.model_dump(exclude_unset=True)
+        old_status = book_repo.status
+        new_status = clean_data.get("status")
 
         for key, value in clean_data.items():
             setattr(book_repo, key, value)
+
+        if new_status is not None:
+            if old_status != BookStatus.read and new_status == BookStatus.read:
+                book_repo.finished_at = datetime.now(timezone.utc).replace(microsecond=0)
+            elif old_status == BookStatus.read and new_status != BookStatus.read:
+                book_repo.finished_at = None
 
         result_save = await self.repository.save_book(book_repo)
 
