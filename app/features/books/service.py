@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from app.features.books.models import Book
 from app.features.books.schemas import BookCreate, BookUpdate
 from app.features.books.repository import BookRepository
-from app.core.exceptions.base import BookAlreadyExistsError, BookNotFoundError
+from app.core.exceptions.book_exp import BookAlreadyExistsError, BookNotFoundError
 from app.core.enums import BookStatus
 
 
