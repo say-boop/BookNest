@@ -12,6 +12,7 @@ class UserRegister(UserBase):
 
 
 class UserLogin(UserBase):
+    email: str = Field(..., max_length=255)
     password: str = Field(..., min_length=8)
 
 
@@ -24,3 +25,12 @@ class UserResponse(UserBase):
     model_config =  ConfigDict(
         from_attributes=True
     )
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    user_id: int | None = None

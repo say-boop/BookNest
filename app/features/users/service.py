@@ -3,7 +3,8 @@ from app.features.users.schemas import UserRegister, UserLogin
 from app.features.users.repository import UserRepository
 
 from app.core.security import Argon2HashPassword
-from app.core.exceptions.user_exp import UserAlreadyExistsError
+from app.core.exceptions.user_exp import UserAlreadyExistsError, UserNotFoundError, UserIncorrectData
+from app.core.generate_jwt import create_access_token, verify_access_token
 
 
 class UserService:
@@ -30,3 +31,28 @@ class UserService:
         result_user = await self.repository.add_user(user)
 
         return result_user
+
+
+    async def login_user(
+        self,
+        user_login: UserLogin
+    ) -> str:
+        user = await self.repository.get_by_email(user_login.email)
+
+        if user is None:
+            raise UserNotFoundError(
+                message=f"Пользователя с email: {user_login.email} не существует."
+            )
+
+        check_password = Argon2HashPassword.verify_password(user_login.password, user.password_hash)
+
+        if not check_password:
+            raise UserIncorrectData(
+                message=f"Неверная почта или пароль."
+            )
+
+        token = create_access_token(
+            data={"sub": str(user.id)}
+        )
+        
+        return token
