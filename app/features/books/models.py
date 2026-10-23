@@ -1,10 +1,16 @@
-from sqlalchemy import String, func, CheckConstraint, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from __future__ import annotations
+from sqlalchemy import String, func, CheckConstraint, Integer, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Enum as SQLEnum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from app.core.database import Base
 from app.core.enums import BookStatus
+
+
+if TYPE_CHECKING:
+    from app.features.users.models import User
 
 
 class Book(Base):
@@ -34,6 +40,9 @@ class Book(Base):
     finished_at: Mapped[datetime | None] = mapped_column(
         nullable=True
     )
+
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    owner: Mapped["User"] = relationship(back_populates="books")
 
     __table_args__ = (
         CheckConstraint("rating >= 1 AND rating <= 10", name="check_rating_range"),

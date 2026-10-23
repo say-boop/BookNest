@@ -1,8 +1,14 @@
+from __future__ import annotations
 from sqlalchemy import String, func, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from app.core.database import Base
+
+
+if TYPE_CHECKING:
+    from app.features.books.models import Book
 
 
 class User(Base):
@@ -35,3 +41,5 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now()
     )
+
+    books: Mapped[list["Book"]] = relationship(back_populates="owner")
