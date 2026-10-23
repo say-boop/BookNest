@@ -1,0 +1,16 @@
+services:
+  postgres_db:
+    image: postgres:17-alpine
+    container_name: booknest_postgres_container
+    environment:
+      POSTGRES_USER: booknest_user
+      POSTGRES_PASSWORD: booknestpassword
+      POSTGRES_DB: booknestdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+
+volumes:
+  pgdata:

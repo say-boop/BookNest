@@ -23,7 +23,11 @@ class Book(Base):
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     note: Mapped[str | None] = mapped_column(String(300), nullable=True)
     status: Mapped[BookStatus] = mapped_column(
-        SQLEnum(BookStatus),
+        SQLEnum(
+            BookStatus,
+            name="bookstatus",
+            values_callable=lambda x: [e.value for e in x]
+        ),
         default=BookStatus.want_to_read,
         nullable=False
     )
