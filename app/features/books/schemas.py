@@ -45,6 +45,6 @@ class BookPaginatedResponse(BaseModel):
 
 
 class BookStatsResponse(BaseModel):
-    want_to_read: int
-    reading: int
-    read: int
+    want_to_read: int = 0
+    reading: int = 0
+    read: int = 0
