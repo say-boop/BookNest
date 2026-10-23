@@ -14,7 +14,8 @@ class BookService:
 
     async def create_book(
         self, 
-        book_in: BookCreate
+        book_in: BookCreate,
+        user_id: int
     ) -> Book:
         book = Book(**book_in.model_dump())
         result_get_book_repo = await self.repository.get_by_title_and_author(book)
@@ -24,13 +25,14 @@ class BookService:
                 message=f"Книга с заголовком: {book.title} и автором: {book.author} существует."
             )
 
-        result_book = await self.repository.add_book(book)
+        result_book = await self.repository.add_book(book, user_id)
 
         return result_book
 
 
     async def get_books(
         self,
+        user_id: int,
         status: BookStatus | None = None,
         search: str | None = None,
         sort: str | None = None,
@@ -39,6 +41,7 @@ class BookService:
         offset: int = 0
     ) -> list[Book]:
         result_get_all_book_repo = await self.repository.get_all_books(
+            user_id=user_id,
             status=status, 
             search=search, 
             sort=sort, 
@@ -52,10 +55,11 @@ class BookService:
 
     async def update_book(
         self, 
-        book_id: int, 
+        book_id: int,
+        user_id: int,
         payload: BookUpdate
     ) -> Book:
-        book_repo = await self.repository.get_by_id(book_id)
+        book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
             raise BookNotFoundError(
@@ -82,9 +86,10 @@ class BookService:
 
     async def delete_book(
         self,
-        book_id: int
+        book_id: int,
+        user_id: int
     ):
-        book_repo = await self.repository.get_by_id(book_id)
+        book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
             raise BookNotFoundError(
@@ -102,9 +107,10 @@ class BookService:
     async def rating_add_book(
         self,
         book_id: int,
-        rating: int
+        rating: int,
+        user_id: int
     ):
-        book_repo = await self.repository.get_by_id(book_id)
+        book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
             raise BookNotFoundError(
@@ -117,12 +123,13 @@ class BookService:
 
 
     async def get_stats(
-        self
+        self,
+        user_id: int
     ):
-        list_status = await self.repository.get_by_count_read()
+        list_status = await self.repository.get_by_count_read(user_id)
         result = {}
 
         for i in list_status:
-            result[i.get("status")] = i.get("count")
+            result[i.get("status")] = i.get("count", 0)
 
         return result

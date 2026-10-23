@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_, func, and_
 
 from app.features.books.models import Book
 from app.core.enums import BookStatus
@@ -20,8 +20,10 @@ class BookRepository:
 
     async def add_book(
         self,
-        book: Book
+        book: Book,
+        user_id: int
     ) -> Book:
+        book.owner_id = user_id
         self.session.add(book)
         await self.session.commit()
         await self.session.refresh(book)
@@ -42,6 +44,7 @@ class BookRepository:
 
     async def get_all_books(
         self,
+        user_id: int,
         status: BookStatus | None = None,
         search: str | None = None,
         sort: str | None = None,
@@ -49,13 +52,15 @@ class BookRepository:
         limit: int = 10,
         offset: int = 0
     ) -> list[Book]:
-        query = select(Book).offset(offset).limit(limit)
+        query = select(Book).where(Book.owner_id == user_id).offset(offset).limit(limit)
         
         if status is not None:
             query = query.where(Book.status == status)
-        elif search is not None and search.strip():
+        
+        if search is not None and search.strip():
             query = query.where(or_(Book.title.like(f"%{search}%"), Book.author.like(f"%{search}%")))
-        elif sort is not None:
+            
+        if sort is not None:
             sort_column = SORT_MAPPING.get(sort, DEFAULT_SORT_COLUMN)
 
             if order.lower() == "desc":
@@ -74,9 +79,10 @@ class BookRepository:
 
     async def get_by_id(
         self,
-        book_id: int
+        book_id: int,
+        user_id: int
     ) -> Book | None:
-        query = select(Book).where(Book.id == book_id)
+        query = select(Book).where(and_(Book.id == book_id, Book.owner_id == user_id))
         result = await self.session.execute(query)
         book = result.scalar_one_or_none()
 
@@ -84,9 +90,10 @@ class BookRepository:
 
 
     async def get_by_count_read(
-        self
+        self,
+        user_id: int
     ):
-        query = select(Book.status, func.count(Book.id).label("count")).group_by(Book.status)
+        query = select(Book.status, func.count(Book.id).label("count")).where(Book.owner_id == user_id).group_by(Book.status)
         result = await self.session.execute(query)
         rows = result.all()
 
