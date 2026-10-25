@@ -18,6 +18,7 @@ class UserLogin(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    username: str
     is_active: bool
     created_at: datetime
     updated_at: datetime
