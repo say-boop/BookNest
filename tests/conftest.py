@@ -16,8 +16,8 @@ from app.main import app
 from app.core.database import Base, async_session, get_db
 from app.core.config import settings
 from app.features.users.models import User
+from app.features.books.models import Book
 from app.core.security import Argon2HashPassword
-from app.core.generate_jwt import create_access_token
 
 test_engine = create_async_engine(settings.get_database_url())
 
@@ -119,3 +119,41 @@ async def auth_client(
     })
 
     yield client
+
+
+@pytest_asyncio.fixture(
+    scope="function"
+)
+def create_book_factory(
+    db_session,
+    test_user
+):
+    async def _make_book(**kwargs):
+        default_data = {
+            "title": "Test book",
+            "author": "Test author",
+            "rating": 5,
+            "note": "Test note",
+            "status": "want_to_read",
+            "owner_id": test_user["id"]
+        }
+
+        final_data = {**default_data, **kwargs}
+
+        db_book = Book(**final_data)
+
+        db_session.add(db_book)
+        await db_session.commit()
+        await db_session.refresh(db_book)
+
+        return {
+            "id": db_book.id,
+            "title": db_book.title,
+            "author": db_book.author,
+            "rating": db_book.rating,
+            "note": db_book.note,
+            "status": db_book.status,
+            "owner_id": db_book.owner_id
+        }
+
+    return _make_book

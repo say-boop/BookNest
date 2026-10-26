@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from httpx import AsyncClient
 from sqlalchemy import select, delete
 
 from app.features.users.models import User
 from app.core.generate_jwt import create_access_token
 
-# /users/register
+# POST /users/register
 async def test_register_success(client: AsyncClient):
     response = await client.post(
         "/users/register",
@@ -88,7 +88,7 @@ async def test_register_missing_required_fields(client: AsyncClient):
     assert response.status_code == 422
 
 
-# /users/login
+# POST /users/login
 async def test_login_success(client: AsyncClient):
     user_data = {
         "email": "test_login@booknest.com",
@@ -186,7 +186,7 @@ async def test_login_verified_and_not_verified_email_user(db_session, test_user:
     assert updated_user.is_verified is True
 
 
-# /users/me
+# GET /users/me
 async def test_get_me_success(auth_client: AsyncClient, test_user: dict):
     response = await auth_client.get(
         "/users/me"
