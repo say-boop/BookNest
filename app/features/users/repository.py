@@ -40,3 +40,13 @@ class UserRepository:
         existing_user = result.scalar_one_or_none()
 
         return existing_user
+
+    async def get_by_username(
+        self,
+        username: str
+    ) -> User | None:
+        query = select(User).where(User.username == username)
+        result = await self.session.execute(query)
+        existing_user = result.scalar_one_or_none()
+
+        return existing_user

@@ -3,7 +3,7 @@ from app.features.users.schemas import UserRegister, UserLogin
 from app.features.users.repository import UserRepository
 
 from app.core.security import Argon2HashPassword
-from app.core.exceptions.user_exp import UserAlreadyExistsError, UserNotFoundError, UserIncorrectData
+from app.core.exceptions.user_exp import UserAlreadyExistsError, UserNotFoundError, UserIncorrectData, UserNotVerifiedEmail
 from app.core.generate_jwt import create_access_token, verify_access_token
 
 
@@ -24,6 +24,13 @@ class UserService:
         if result_get_user_repo is not None:
             raise UserAlreadyExistsError(
                 message=f"Пользователь с почтой: {user_in.email} уже существует."
+            )
+
+        result_get_duplicate_username = await self.repository.get_by_username(user_in.username)
+
+        if result_get_duplicate_username is not None:
+            raise UserAlreadyExistsError(
+                message=f"Пользователь с таким именем: {user_in.username} уже существует."
             )
 
         user.password_hash = Argon2HashPassword.hash_password(user_in.password)
@@ -49,6 +56,11 @@ class UserService:
         if not check_password:
             raise UserIncorrectData(
                 message=f"Неверная почта или пароль."
+            )
+
+        if user.is_verified:
+            raise UserNotVerifiedEmail(
+                message=f"Почта: {user_login.email} не подтверждена."
             )
 
         token = create_access_token(

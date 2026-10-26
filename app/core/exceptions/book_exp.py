@@ -8,4 +8,4 @@ class BookAlreadyExistsError(AppError):
 
 class BookNotFoundError(AppError):
     status_code = 404
-    error_code = "NOT FOUND"
+    error_code = "NOT_FOUND"
