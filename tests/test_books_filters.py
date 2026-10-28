@@ -38,7 +38,7 @@ async def test_get_books_search_buy_title_or_author(auth_client: AsyncClient, cr
     data = response.json()
 
     for item in data["items"]:
-        assert item["title" or "author"] == "garry"
+        assert "garry" in item["title"].lower()
 
 
 # Sorting and Pagination
