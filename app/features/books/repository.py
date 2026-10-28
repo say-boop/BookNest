@@ -58,7 +58,11 @@ class BookRepository:
             query = query.where(Book.status == status)
         
         if search is not None and search.strip():
-            query = query.where(or_(Book.title.like(f"%{search}%"), Book.author.like(f"%{search}%")))
+            ts_query = func.plainto_tsquery('russian', search)
+            query = query.where(Book.search_vector.op("@@")(ts_query))
+
+            if sort is None:
+                query = query.order_by(func.ts_rank(Book.search_vector, ts_query).desc())
             
         if sort is not None:
             sort_column = SORT_MAPPING.get(sort, DEFAULT_SORT_COLUMN)

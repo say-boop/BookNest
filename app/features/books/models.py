@@ -1,9 +1,10 @@
 from __future__ import annotations
-from sqlalchemy import String, func, CheckConstraint, Integer, ForeignKey
+from sqlalchemy import String, func, CheckConstraint, Integer, ForeignKey, Computed, Index
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Enum as SQLEnum
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from app.core.database import Base
 from app.core.enums import BookStatus
@@ -48,6 +49,22 @@ class Book(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     owner: Mapped["User"] = relationship(back_populates="books")
 
+    search_vector: Mapped[Any] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "setweight(to_tsvector('russian', coalesce(title, '')), 'A') || " \
+            "setweight(to_tsvector('russian', coalesce(author, '')), 'B') || " \
+            "setweight(to_tsvector('russian', coalesce(note, '')), 'C')",
+            persisted=True
+        ),
+        nullable=True
+    )
+
     __table_args__ = (
         CheckConstraint("rating >= 1 AND rating <= 10", name="check_rating_range"),
+        Index(
+            "idx_books_search_vector",
+            "search_vector",
+            postgresql_using="gin"
+        )
     )
