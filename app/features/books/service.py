@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from redis.asyncio import Redis
+import json
 
 from app.features.books.models import Book
 from app.features.books.schemas import BookCreate, BookUpdate
@@ -8,8 +10,9 @@ from app.core.enums import BookStatus
 
 
 class BookService:
-    def __init__(self, repository: BookRepository):
+    def __init__(self, repository: BookRepository, redis: Redis):
         self.repository = repository
+        self.redis = redis
 
 
     async def create_book(
@@ -26,6 +29,8 @@ class BookService:
             )
 
         result_book = await self.repository.add_book(book, user_id)
+
+        await self.redis.delete(f"stats:{user_id}")
 
         return result_book
 
@@ -81,6 +86,8 @@ class BookService:
 
         result_save = await self.repository.save_book(book_repo)
 
+        await self.redis.delete(f"stats:{user_id}")
+
         return result_save
 
 
@@ -97,6 +104,8 @@ class BookService:
             )
 
         await self.repository.delete_book(book_repo)
+
+        await self.redis.delete(f"stats:{user_id}")
 
         return {
             "status": "success",
@@ -119,6 +128,8 @@ class BookService:
 
         result_rating_update = await self.repository.rating_update_book(book_id, rating)
 
+        await self.redis.delete(f"stats:{user_id}")
+
         return result_rating_update
 
 
@@ -126,10 +137,19 @@ class BookService:
         self,
         user_id: int
     ):
+        cached_key = f"stats:{user_id}"
+
+        cached_stats = await self.redis.get(cached_key)
+
+        if cached_stats:
+            return json.loads(cached_stats)
+        
         list_status = await self.repository.get_by_count_read(user_id)
         result = {}
 
         for i in list_status:
             result[i.get("status")] = i.get("count", 0)
+
+        await self.redis.set(cached_key, json.dumps(result), ex=120)
 
         return result

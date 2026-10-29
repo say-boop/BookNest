@@ -1,10 +1,12 @@
 from fastapi import APIRouter, status, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Literal
+from redis.asyncio import Redis
 
 from app.core.database import get_db
 from app.core.enums import BookStatus
 from app.core.dependencies import get_current_user
+from app.core.redis_client import get_redis
 from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate, BookPaginatedResponse, BookStatsResponse
 from app.features.books.service import BookService
 from app.features.books.repository import BookRepository
@@ -14,6 +16,14 @@ from app.features.users.models import User
 router_books = APIRouter(prefix="/books", tags=["books"])
 
 
+def get_book_service(
+    session: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis)
+):
+    repository = BookRepository(session)
+    return BookService(repository, redis)
+
+
 @router_books.post(
     "",
     response_model=BookResponse,
@@ -21,11 +31,9 @@ router_books = APIRouter(prefix="/books", tags=["books"])
 )
 async def add_book(
     book_in: BookCreate,
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
 ):
-    repository = BookRepository(session)
-    service = BookService(repository)
     return await service.create_book(book_in, current_user.id)
 
 
@@ -41,11 +49,9 @@ async def get_all_books(
     order: Literal["asc", "desc"] = "asc",
     limit: int = Query(default=10, ge=1, le=50),
     offset: int = Query(default=0, ge=0),
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
 ):
-    repository = BookRepository(session)
-    service = BookService(repository)
     return await service.get_books(
         user_id=current_user.id,
         status=status, 
@@ -62,11 +68,9 @@ async def get_all_books(
     response_model=BookStatsResponse
 )
 async def get_stats(
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
 ):
-    repository = BookRepository(session)
-    service = BookService(repository)
     return await service.get_stats(current_user.id)
 
 
@@ -78,11 +82,9 @@ async def get_stats(
 async def update_book(
     book_id: int,
     payload: BookUpdate,
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
 ):
-    repository = BookRepository(session)
-    service = BookService(repository)
     return await service.update_book(book_id, current_user.id, payload)
 
 
@@ -91,11 +93,9 @@ async def update_book(
 )
 async def delete_book(
     book_id: int,
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
 ):
-    repository = BookRepository(session)
-    service = BookService(repository)
     return await service.delete_book(book_id, current_user.id)
 
 
@@ -105,9 +105,7 @@ async def delete_book(
 async def add_rating_book(
     book_id: int,
     rating: BookRatingUpdate,
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
 ):
-    repository = BookRepository(session)
-    service = BookService(repository)
     return await service.rating_add_book(book_id, rating=rating.rating, user_id=current_user.id)
