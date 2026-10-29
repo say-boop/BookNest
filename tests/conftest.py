@@ -1,12 +1,14 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine
 from httpx import AsyncClient, ASGITransport
 import pytest_asyncio
 import os
 import asyncio
 import sys
 
+from app.core.config import settings
+
 os.environ["POSTGRES_DB"] = "booknest_test_db"
-os.environ["POSTGRES_HOST"] = "127.0.0.1"
+os.environ["POSTGRES_HOST"] = settings.POSTGRES_HOST
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -14,7 +16,6 @@ if sys.platform == "win32":
 
 from app.main import app
 from app.core.database import Base, async_session, get_db
-from app.core.config import settings
 from app.features.users.models import User
 from app.features.books.models import Book
 from app.core.security import Argon2HashPassword
