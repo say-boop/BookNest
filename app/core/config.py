@@ -17,9 +17,18 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_HOST: str = "127.0.0.1"
 
+    REDIS_HOST: str = "127.0.0.1"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: SecretStr
+    REDIS_DB: int = 0
+
     def get_database_url(self) -> str:
         password = self.POSTGRES_PASSWORD.get_secret_value()
         return f"postgresql+psycopg://{self.POSTGRES_USER}:{password}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
+    def get_redis_url(self) -> str:
+        password = self.REDIS_PASSWORD.get_secret_value()
+        return f"redis://:{password}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     model_config = SettingsConfigDict(
         env_file=".env",
