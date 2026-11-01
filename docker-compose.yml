@@ -25,6 +25,24 @@ services:
       - redis_data:/data
     restart: always
   
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: booknest_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
   app:
     build: .
     container_name: booknest_app
@@ -43,8 +61,45 @@ services:
     volumes:
       - .:/app
       - /app/.venv
+  
+  celery_worker:
+    build: .
+    container_name: booknest_celery_worker
+    command: celery -A app.core.celery_app worker --loglevel=info
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASSWORD}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
+    restart: always
+  
+  celery_beat:
+    build: .
+    container_name: booknest_celery_beat
+    command: celery -A app.core.celery_app beat --loglevel=info
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASSWORD}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
+    restart: always
 
 
 volumes:
   pgdata:
   redis_data:
+  rabbitmq_data:
