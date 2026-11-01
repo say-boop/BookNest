@@ -11,16 +11,21 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    POSTGRES_USER: str = "booknest_user"
+    POSTGRES_USER: str
     POSTGRES_PASSWORD: SecretStr
-    POSTGRES_DB: str = "booknestdb"
-    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str
+    POSTGRES_PORT: int
     POSTGRES_HOST: str = "127.0.0.1"
 
     REDIS_HOST: str = "127.0.0.1"
-    REDIS_PORT: int = 6379
+    REDIS_PORT: int
     REDIS_PASSWORD: SecretStr
     REDIS_DB: int = 0
+
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int
+    RABBITMQ_DEFAULT_USER: str
+    RABBITMQ_DEFAULT_PASSWORD: SecretStr
 
     def get_database_url(self) -> str:
         password = self.POSTGRES_PASSWORD.get_secret_value()
@@ -29,6 +34,10 @@ class Settings(BaseSettings):
     def get_redis_url(self) -> str:
         password = self.REDIS_PASSWORD.get_secret_value()
         return f"redis://:{password}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+    def get_rabbitmq_url(self) -> str:
+        password = self.RABBITMQ_DEFAULT_PASSWORD.get_secret_value()
+        return f"amqp://{self.RABBITMQ_DEFAULT_USER}:{password}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}"
 
     model_config = SettingsConfigDict(
         env_file=".env",
