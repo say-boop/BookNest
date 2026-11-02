@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 from redis.asyncio import Redis
+import pandas as pd
+import io
 import json
 
 from app.features.books.models import Book
@@ -95,7 +97,7 @@ class BookService:
         self,
         book_id: int,
         user_id: int
-    ):
+    ) -> dict:
         book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
@@ -118,7 +120,7 @@ class BookService:
         book_id: int,
         rating: int,
         user_id: int
-    ):
+    ) -> Book | None:
         book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
@@ -136,7 +138,7 @@ class BookService:
     async def get_stats(
         self,
         user_id: int
-    ):
+    ) -> dict:
         cached_key = f"stats:{user_id}"
 
         cached_stats = await self.redis.get(cached_key)
@@ -153,3 +155,32 @@ class BookService:
         await self.redis.set(cached_key, json.dumps(result), ex=120)
 
         return result
+
+
+    async def get_export_books(
+        self,
+        user_id: int
+    ) -> io.BytesIO:
+        user_books = await self.repository.get_all_books_for_export(user_id)
+
+        books_data = []
+
+        for book in user_books:
+            books_data.append({
+                "Title": book.title,
+                "Author": book.author,
+                "Status": book.status.value if book.status else "There is no status",
+                "Note": book.note if book.note else "There are no records",
+                "Created_At": book.created_at,
+                "Finished_At": book.finished_at if book.finished_at else "There is no end date for reading"
+            })
+
+        df = pd.DataFrame(books_data)
+
+        buffer = io.BytesIO()
+
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="My Books")
+
+        buffer.seek(0)
+        return buffer

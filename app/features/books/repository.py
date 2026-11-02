@@ -51,7 +51,7 @@ class BookRepository:
         order: str = "asc",
         limit: int = 10,
         offset: int = 0
-    ) -> list[Book]:
+    ) -> dict:
         query = select(Book).where(Book.owner_id == user_id).offset(offset).limit(limit)
         
         if status is not None:
@@ -105,6 +105,15 @@ class BookRepository:
             "status": row.status,
             "count": row.count
         } for row in rows]
+
+
+    async def get_all_books_for_export(
+        self,
+        user_id: int
+    ) -> list[Book]:
+        query = select(Book).where(Book.owner_id == user_id)
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
 
 
     async def save_book(
