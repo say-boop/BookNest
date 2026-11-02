@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, func, and_
+from sqlalchemy import select, or_, func, and_, insert
 
 from app.features.books.models import Book
 from app.core.enums import BookStatus
@@ -30,6 +30,21 @@ class BookRepository:
 
         return book
 
+
+    async def bulk_create(
+        self,
+        books: list[dict]
+    ) -> int | None:
+        if not books:
+            return None
+
+        query = insert(Book).values(books)
+
+        await self.session.execute(query)
+        await self.session.commit()
+
+        return len(books)
+        
 
     async def get_by_title_and_author(
         self,

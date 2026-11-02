@@ -7,7 +7,7 @@ import json
 from app.features.books.models import Book
 from app.features.books.schemas import BookCreate, BookUpdate
 from app.features.books.repository import BookRepository
-from app.core.exceptions.book_exp import BookAlreadyExistsError, BookNotFoundError
+from app.core.exceptions.book_exp import BookAlreadyExistsError, BookNotFoundError, BookIncorrectFileFormatImport, BookNoRequiredColumnsImport
 from app.core.enums import BookStatus
 
 
@@ -184,3 +184,59 @@ class BookService:
 
         buffer.seek(0)
         return buffer
+
+
+    async def import_books(
+        self,
+        user_id: int,
+        filename: str,
+        file_bytes: bytes
+    ) -> dict:
+        fname_lower = filename.lower()
+
+        if fname_lower.endswith(".xlsx"):
+            file_type = "excel"
+        elif fname_lower.endswith(".csv"):
+            file_type = "csv"
+        else:
+            raise BookIncorrectFileFormatImport(
+                message="Неверный формат"
+            )
+        
+        buffer = io.BytesIO(file_bytes)
+
+        if file_type == "excel":
+            df = pd.read_excel(buffer, engine="openpyxl")
+        else:
+            df = pd.read_csv(buffer)
+
+        df.columns = [str(col).strip().lower() for col in df.columns]
+
+        required_columns = {"title", "author"}
+
+        if not required_columns.issubset(df.columns):
+            missing = required_columns - set(df.columns)
+            raise BookNoRequiredColumnsImport(
+                message=f"В файле отсутствуют обязательные колонки: {', '.join(missing)}"
+            )
+        
+        df = df.replace({pd.NA: None, float("nan"): None})
+
+        books_to_create = []
+
+        for _, row in df.iterrows():
+            if not row["title"] or not row["author"]:
+                continue
+
+            books_to_create.append({
+                "title": row["title"].strip(),
+                "author": row["author"].strip(),
+                "owner_id": user_id,
+            })
+
+        await self.repository.bulk_create(books_to_create)
+
+        return {
+            "status": "success",
+            "len": len(books_to_create)
+        }
