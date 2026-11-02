@@ -1,4 +1,5 @@
-from fastapi import APIRouter, status, Depends, Query
+from fastapi import APIRouter, status, Depends, Query, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Literal
 from redis.asyncio import Redis
@@ -72,6 +73,45 @@ async def get_stats(
     service: BookService = Depends(get_book_service)
 ):
     return await service.get_stats(current_user.id)
+
+
+@router_books.get(
+    "/export",
+    status_code=status.HTTP_200_OK
+)
+async def export_books(
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
+):
+    excel_file = await service.get_export_books(current_user.id)
+    
+    headers = {
+        "Content-Disposition": f"attachment; filename=books_user_{current_user.id}.xlsx"
+    }
+
+    return StreamingResponse(
+        excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers
+    )
+
+
+@router_books.post(
+    "/import",
+    status_code=status.HTTP_200_OK
+)
+async def import_books(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    service: BookService = Depends(get_book_service)
+):
+    contents = await file.read()
+
+    return await service.import_books(
+        user_id=current_user.id,
+        filename=file.filename,
+        file_bytes=contents
+    )
 
 
 @router_books.patch(

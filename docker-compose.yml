@@ -61,11 +61,12 @@ services:
     volumes:
       - .:/app
       - /app/.venv
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
   
   celery_worker:
     build: .
     container_name: booknest_celery_worker
-    command: celery -A app.core.celery_app worker --loglevel=info
+    command: watchfiles "celery -A app.core.celery_app worker --loglevel=info"
     volumes:
       - .:/app
       - /app/.venv

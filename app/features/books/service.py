@@ -1,11 +1,13 @@
 from datetime import datetime, timezone
 from redis.asyncio import Redis
+import pandas as pd
+import io
 import json
 
 from app.features.books.models import Book
 from app.features.books.schemas import BookCreate, BookUpdate
 from app.features.books.repository import BookRepository
-from app.core.exceptions.book_exp import BookAlreadyExistsError, BookNotFoundError
+from app.core.exceptions.book_exp import BookAlreadyExistsError, BookNotFoundError, BookIncorrectFileFormatImport, BookNoRequiredColumnsImport
 from app.core.enums import BookStatus
 
 
@@ -95,7 +97,7 @@ class BookService:
         self,
         book_id: int,
         user_id: int
-    ):
+    ) -> dict:
         book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
@@ -118,7 +120,7 @@ class BookService:
         book_id: int,
         rating: int,
         user_id: int
-    ):
+    ) -> Book | None:
         book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
@@ -136,7 +138,7 @@ class BookService:
     async def get_stats(
         self,
         user_id: int
-    ):
+    ) -> dict:
         cached_key = f"stats:{user_id}"
 
         cached_stats = await self.redis.get(cached_key)
@@ -153,3 +155,88 @@ class BookService:
         await self.redis.set(cached_key, json.dumps(result), ex=120)
 
         return result
+
+
+    async def get_export_books(
+        self,
+        user_id: int
+    ) -> io.BytesIO:
+        user_books = await self.repository.get_all_books_for_export(user_id)
+
+        books_data = []
+
+        for book in user_books:
+            books_data.append({
+                "Title": book.title,
+                "Author": book.author,
+                "Status": book.status.value if book.status else "There is no status",
+                "Note": book.note if book.note else "There are no records",
+                "Created_At": book.created_at,
+                "Finished_At": book.finished_at if book.finished_at else "There is no end date for reading"
+            })
+
+        df = pd.DataFrame(books_data)
+
+        buffer = io.BytesIO()
+
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="My Books")
+
+        buffer.seek(0)
+        return buffer
+
+
+    async def import_books(
+        self,
+        user_id: int,
+        filename: str,
+        file_bytes: bytes
+    ) -> dict:
+        fname_lower = filename.lower()
+
+        if fname_lower.endswith(".xlsx"):
+            file_type = "excel"
+        elif fname_lower.endswith(".csv"):
+            file_type = "csv"
+        else:
+            raise BookIncorrectFileFormatImport(
+                message="Неверный формат"
+            )
+        
+        buffer = io.BytesIO(file_bytes)
+
+        if file_type == "excel":
+            df = pd.read_excel(buffer, engine="openpyxl")
+        else:
+            df = pd.read_csv(buffer)
+
+        df.columns = [str(col).strip().lower() for col in df.columns]
+
+        required_columns = {"title", "author"}
+
+        if not required_columns.issubset(df.columns):
+            missing = required_columns - set(df.columns)
+            raise BookNoRequiredColumnsImport(
+                message=f"В файле отсутствуют обязательные колонки: {', '.join(missing)}"
+            )
+        
+        df = df.replace({pd.NA: None, float("nan"): None})
+
+        books_to_create = []
+
+        for _, row in df.iterrows():
+            if not row["title"] or not row["author"]:
+                continue
+
+            books_to_create.append({
+                "title": row["title"].strip(),
+                "author": row["author"].strip(),
+                "owner_id": user_id,
+            })
+
+        await self.repository.bulk_create(books_to_create)
+
+        return {
+            "status": "success",
+            "len": len(books_to_create)
+        }
