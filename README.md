@@ -1,4 +1,4 @@
-# 📚 BookNest
+# 📚 BookNest  [![CI Pipeline](https://github.com/say-boop/BookNest/actions/workflows/ci.yml/badge.svg)](https://github.com/say-boop/BookNest/actions/workflows/ci.yml)
 
 REST API для ведения личного списка книг. Позволяет регистрироваться, добавлять книги, отслеживать статус чтения, ставить оценки, а также искать и фильтровать свою библиотеку.
 
@@ -30,6 +30,7 @@ REST API для ведения личного списка книг. Позво�
 - **Celery** - фоновые задачи
 - **RabbitMQ** - брокер сообщений
 - **Pandas + openpyxl** - парсинг файлов CSV и Excel
+- **GitHub Actions** — CI/CD (линтер, тесты, сборка Docker)
 
 ## 🚀 Быстрый старт
 
@@ -125,6 +126,14 @@ docker-compose up --build
 poetry run pytest -v
 ```
 
+### CI/CD Pipeline
+При каждом пуше в ветку `main` или `ci/github-actions` запускается пайплайн (GitHub Actions), который:
+- Проверяет код линтером `ruff`.
+- Проверяет типы `mypy`.
+- Поднимает временные контейнеры PostgreSQL и Redis.
+- Прогоняет все тесты (`pytest`).
+- Собирает Docker-образ (проверка `Dockerfile`).
+
 ## 📂 Структура проекта
 
 ```text
@@ -135,7 +144,8 @@ BookNest/
 │   │   ├── books/         # Модели, схемы, репозиторий, сервис, роутер книг
 │   │   └── users/         # Модели, схемы, репозиторий, сервис, роутер юзеров
 │   └── main.py            # Точка входа FastAPI
-├── migrations/            # Alembic-миграции
+├── alembic/               # Alembic-миграции
+├── tests/                 # 44 Теста
 ├── Dockerfile
 ├── docker-compose.yml
 ├── entrypoint.sh          # Скрипт автозапуска миграций
