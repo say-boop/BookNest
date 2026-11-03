@@ -7,16 +7,21 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.core.config import settings
-
-os.environ.setdefault("POSTGRES_DB", "booknest_test_db")
-os.environ.setdefault("POSTGRES_HOST", settings.POSTGRES_HOST)
+os.environ.setdefault("POSTGRES_HOST", "127.0.0.1")
+os.environ.setdefault("POSTGRES_USER", "postgres")
+os.environ.setdefault("POSTGRES_PASSWORD", "postgres_password")
+os.environ.setdefault("POSTGRES_DB", "test_db")
+os.environ.setdefault("REDIS_HOST", "127.0.0.1")
+os.environ.setdefault("REDIS_PORT", "6379")
+os.environ.setdefault("REDIS_DB", "0")
+os.environ.setdefault("REDIS_PASSWORD", "")
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 from app.core.database import Base, async_session, get_db
+from app.core.config import settings
 from app.core.security import Argon2HashPassword
 from app.features.books.models import Book
 from app.features.users.models import User
