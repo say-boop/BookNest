@@ -1,14 +1,22 @@
-from datetime import datetime, timezone
-from redis.asyncio import Redis
-import pandas as pd
 import io
 import json
+from datetime import UTC, datetime
+from typing import Any, cast
 
-from app.features.books.models import Book
-from app.features.books.schemas import BookCreate, BookUpdate
-from app.features.books.repository import BookRepository
-from app.core.exceptions.book_exp import BookAlreadyExistsError, BookNotFoundError, BookIncorrectFileFormatImport, BookNoRequiredColumnsImport
+import pandas as pd
+from redis.asyncio import Redis
+
 from app.core.enums import BookStatus
+from app.core.exceptions.book_exp import (
+    BookAlreadyExistsError,
+    BookIncorrectFileFormatImport,
+    BookNoRequiredColumnsImport,
+    BookNotFoundError,
+    BookRatingIsNone,
+)
+from app.features.books.models import Book
+from app.features.books.repository import BookRepository
+from app.features.books.schemas import BookCreate, BookResponse, BookUpdate
 
 
 class BookService:
@@ -18,7 +26,7 @@ class BookService:
 
 
     async def create_book(
-        self, 
+        self,
         book_in: BookCreate,
         user_id: int
     ) -> Book:
@@ -46,12 +54,12 @@ class BookService:
         order: str = "asc",
         limit: int = 10,
         offset: int = 0
-    ) -> list[Book]:
+    ) -> dict[str, Any]:
         result_get_all_book_repo = await self.repository.get_all_books(
             user_id=user_id,
-            status=status, 
-            search=search, 
-            sort=sort, 
+            status=status,
+            search=search,
+            sort=sort,
             order=order,
             limit=limit,
             offset=offset
@@ -61,7 +69,7 @@ class BookService:
 
 
     async def update_book(
-        self, 
+        self,
         book_id: int,
         user_id: int,
         payload: BookUpdate
@@ -82,7 +90,7 @@ class BookService:
 
         if new_status is not None:
             if old_status != BookStatus.read and new_status == BookStatus.read:
-                book_repo.finished_at = datetime.now(timezone.utc).replace(microsecond=0)
+                book_repo.finished_at = datetime.now(UTC).replace(microsecond=0)
             elif old_status == BookStatus.read and new_status != BookStatus.read:
                 book_repo.finished_at = None
 
@@ -97,7 +105,7 @@ class BookService:
         self,
         book_id: int,
         user_id: int
-    ) -> dict:
+    ) -> dict[str, str]:
         book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
@@ -118,9 +126,14 @@ class BookService:
     async def rating_add_book(
         self,
         book_id: int,
-        rating: int,
+        rating: int | None,
         user_id: int
-    ) -> Book | None:
+    ) -> BookResponse | None:
+        if rating is None:
+            raise BookRatingIsNone(
+                message="Не указан рейтинг"
+            )
+
         book_repo = await self.repository.get_by_id(book_id, user_id)
 
         if book_repo is None:
@@ -132,25 +145,25 @@ class BookService:
 
         await self.redis.delete(f"stats:{user_id}")
 
-        return result_rating_update
+        return BookResponse.model_validate(result_rating_update)
 
 
     async def get_stats(
         self,
         user_id: int
-    ) -> dict:
+    ) -> dict[str, int]:
         cached_key = f"stats:{user_id}"
 
         cached_stats = await self.redis.get(cached_key)
 
         if cached_stats:
-            return json.loads(cached_stats)
-        
+            return cast(dict[str, int], json.loads(cached_stats))
+
         list_status = await self.repository.get_by_count_read(user_id)
         result = {}
 
         for i in list_status:
-            result[i.get("status")] = i.get("count", 0)
+            result[str(i.get("status"))] = int(i.get("count", 0))
 
         await self.redis.set(cached_key, json.dumps(result), ex=120)
 
@@ -172,7 +185,9 @@ class BookService:
                 "Status": book.status.value if book.status else "There is no status",
                 "Note": book.note if book.note else "There are no records",
                 "Created_At": book.created_at,
-                "Finished_At": book.finished_at if book.finished_at else "There is no end date for reading"
+                "Finished_At": book.finished_at
+                if book.finished_at
+                else "There is no end date for reading"
             })
 
         df = pd.DataFrame(books_data)
@@ -189,9 +204,14 @@ class BookService:
     async def import_books(
         self,
         user_id: int,
-        filename: str,
+        filename: str | None,
         file_bytes: bytes
-    ) -> dict:
+    ) -> dict[str, Any]:
+        if filename is None:
+            raise BookIncorrectFileFormatImport(
+                message="Неверный формат"
+            )
+
         fname_lower = filename.lower()
 
         if fname_lower.endswith(".xlsx"):
@@ -202,7 +222,7 @@ class BookService:
             raise BookIncorrectFileFormatImport(
                 message="Неверный формат"
             )
-        
+
         buffer = io.BytesIO(file_bytes)
 
         if file_type == "excel":
@@ -219,7 +239,7 @@ class BookService:
             raise BookNoRequiredColumnsImport(
                 message=f"В файле отсутствуют обязательные колонки: {', '.join(missing)}"
             )
-        
+
         df = df.replace({pd.NA: None, float("nan"): None})
 
         books_to_create = []

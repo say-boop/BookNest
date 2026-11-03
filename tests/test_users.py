@@ -1,12 +1,15 @@
 from datetime import timedelta
-from httpx import AsyncClient
-from sqlalchemy import select, delete
 
-from app.features.users.models import User
+from httpx import AsyncClient
+from sqlalchemy import delete, select
+from typing import Callable, Any
+
 from app.core.generate_jwt import create_access_token
+from app.features.users.models import User
+
 
 # POST /users/register
-async def test_register_success(client: AsyncClient):
+async def test_register_success(client: AsyncClient) -> None:
     response = await client.post(
         "/users/register",
         json={
@@ -24,7 +27,7 @@ async def test_register_success(client: AsyncClient):
     assert "password" not in data
 
 
-async def test_register_duplicate_email(client: AsyncClient, test_user: dict):
+async def test_register_duplicate_email(client: AsyncClient, test_user: dict) -> None:
     response = await client.post(
         "/users/register",
         json={
@@ -41,7 +44,7 @@ async def test_register_duplicate_email(client: AsyncClient, test_user: dict):
     assert data["message"] == f"Пользователь с почтой: {test_user["email"]} уже существует."
 
 
-async def test_register_duplicate_username(client: AsyncClient, test_user: dict):
+async def test_register_duplicate_username(client: AsyncClient, test_user: dict) -> None:
     response = await client.post(
         "/users/register",
         json={
@@ -54,7 +57,7 @@ async def test_register_duplicate_username(client: AsyncClient, test_user: dict)
     assert response.status_code == 409
 
 
-async def test_register_invalid_email(client: AsyncClient):
+async def test_register_invalid_email(client: AsyncClient) -> None:
     response = await client.post(
         "/users/register",
         json={
@@ -67,7 +70,7 @@ async def test_register_invalid_email(client: AsyncClient):
     assert response.status_code == 422
 
 
-async def test_register_short_password(client: AsyncClient):
+async def test_register_short_password(client: AsyncClient) -> None:
     response = await client.post(
         "/users/register",
         json={
@@ -80,7 +83,7 @@ async def test_register_short_password(client: AsyncClient):
     assert response.status_code == 422
 
 
-async def test_register_missing_required_fields(client: AsyncClient):
+async def test_register_missing_required_fields(client: AsyncClient) -> None:
     response = await client.post(
         "/users/register",
     )
@@ -89,7 +92,7 @@ async def test_register_missing_required_fields(client: AsyncClient):
 
 
 # POST /users/login
-async def test_login_success(client: AsyncClient):
+async def test_login_success(client: AsyncClient) -> None:
     user_data = {
         "email": "test_login@booknest.com",
         "username": "test_login",
@@ -118,7 +121,7 @@ async def test_login_success(client: AsyncClient):
     assert data["token_type"] == "bearer"
 
 
-async def test_login_invalid_password(client: AsyncClient, test_user: dict):
+async def test_login_invalid_password(client: AsyncClient, test_user: dict) -> None:
     login_data = {
         "username": test_user["email"],
         "password": "testlogininvalpasswd123"
@@ -136,7 +139,7 @@ async def test_login_invalid_password(client: AsyncClient, test_user: dict):
     assert data["message"] == "Неверная почта или пароль."
 
 
-async def test_login_user_not_found(client: AsyncClient):
+async def test_login_user_not_found(client: AsyncClient) -> None:
     login_data = {
         "username": "user_not_found@booknest.com",
         "password": "testloginusernotfound123"
@@ -154,7 +157,7 @@ async def test_login_user_not_found(client: AsyncClient):
     assert data["message"] == f"Пользователя с email: {login_data["username"]} не существует."
 
 
-async def test_login_invalid_credentials_format(client: AsyncClient):
+async def test_login_invalid_credentials_format(client: AsyncClient) -> None:
     login_data = {
         "username": "user_invalid_credentials_format@booknest.com",
         "password": "testlogininvalcredformat123"
@@ -168,7 +171,7 @@ async def test_login_invalid_credentials_format(client: AsyncClient):
     assert response.status_code == 422
 
 
-async def test_login_verified_and_not_verified_email_user(db_session, test_user: dict):
+async def test_login_verified_and_not_verified_email_user(db_session: Any, test_user: dict) -> None:
     query = select(User).where(User.id == test_user["id"])
     result = await db_session.execute(query)
     user_in_db = result.scalar_one()
@@ -187,7 +190,7 @@ async def test_login_verified_and_not_verified_email_user(db_session, test_user:
 
 
 # GET /users/me
-async def test_get_me_success(auth_client: AsyncClient, test_user: dict):
+async def test_get_me_success(auth_client: AsyncClient, test_user: dict) -> None:
     response = await auth_client.get(
         "/users/me"
     )
@@ -199,7 +202,7 @@ async def test_get_me_success(auth_client: AsyncClient, test_user: dict):
     assert data["username"] == test_user["username"]
 
 
-async def test_get_me_no_token(client: AsyncClient):
+async def test_get_me_no_token(client: AsyncClient) -> None:
     response = await client.get(
         "/users/me"
     )
@@ -210,7 +213,7 @@ async def test_get_me_no_token(client: AsyncClient):
     assert data["detail"] == "Not authenticated"
 
 
-async def test_get_me_invalid_token_format(auth_client: AsyncClient):
+async def test_get_me_invalid_token_format(auth_client: AsyncClient) -> None:
     auth_client.headers.update({
         "Authorization": "dsadas"
     })
@@ -222,7 +225,7 @@ async def test_get_me_invalid_token_format(auth_client: AsyncClient):
     assert response.status_code == 401
 
 
-async def test_get_me_expired_token(client: AsyncClient, test_user: dict):
+async def test_get_me_expired_token(client: AsyncClient, test_user: dict) -> None:
     expired_delta = timedelta(minutes=-10)
 
     expired_token = create_access_token(
@@ -244,7 +247,7 @@ async def test_get_me_expired_token(client: AsyncClient, test_user: dict):
     assert "detail" in response.json()
 
 
-async def test_get_me_malformed_signature(client: AsyncClient, test_user: dict):
+async def test_get_me_malformed_signature(client: AsyncClient, test_user: dict) -> None:
     valid_token = create_access_token(
         data={
             "sub": test_user["email"]
@@ -264,7 +267,7 @@ async def test_get_me_malformed_signature(client: AsyncClient, test_user: dict):
     assert response.status_code == 401
 
 
-async def test_get_me_deleted_user(client: AsyncClient, db_session, test_user: dict):
+async def test_get_me_deleted_user(client: AsyncClient, db_session: Any, test_user: dict) -> None:
     valid_token = create_access_token(
         data={
             "sub": test_user["email"]

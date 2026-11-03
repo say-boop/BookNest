@@ -19,4 +19,8 @@ class BookIncorrectFileFormatImport(AppError):
 class BookNoRequiredColumnsImport(AppError):
     status_code = 400
     error_code = "NO_REQUIRED_COLUMNS_IMPORT"
-    
+
+
+class BookRatingIsNone(AppError):
+    status_code = 422
+    error_code = "RATING_IS_NONE"

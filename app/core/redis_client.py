@@ -1,8 +1,8 @@
+from collections.abc import AsyncGenerator
+
 from redis import asyncio as aioredis
-from typing import AsyncGenerator
 
 from app.core.config import settings
-
 
 REDIS_URL = settings.get_redis_url()
 

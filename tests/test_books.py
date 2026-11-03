@@ -1,6 +1,8 @@
-from httpx import AsyncClient
-import pandas as pd
 import io
+
+import pandas as pd
+from httpx import AsyncClient
+from typing import Callable, Any
 
 from app.core.generate_jwt import create_access_token
 from app.core.security import Argon2HashPassword
@@ -8,7 +10,7 @@ from app.features.users.models import User
 
 
 # POST /books
-async def test_create_book_success(auth_client: AsyncClient):
+async def test_create_book_success(auth_client: AsyncClient) -> None:
     response = await auth_client.post(
         "/books",
         json={
@@ -28,7 +30,7 @@ async def test_create_book_success(auth_client: AsyncClient):
     assert data["author"] == "Test create book_author"
 
 
-async def test_create_book_unauthorized(client: AsyncClient):
+async def test_create_book_unauthorized(client: AsyncClient) -> None:
     response = await client.post(
         "/books",
         json={
@@ -40,12 +42,12 @@ async def test_create_book_unauthorized(client: AsyncClient):
     )
 
     assert response.status_code == 401
-    
+
     data = response.json()
     assert data["detail"] == "Not authenticated"
 
 
-async def test_create_book_invalid_data(auth_client: AsyncClient):
+async def test_create_book_invalid_data(auth_client: AsyncClient) -> None:
     response = await auth_client.post(
         "/books",
         json={
@@ -60,7 +62,7 @@ async def test_create_book_invalid_data(auth_client: AsyncClient):
 
 
 # GET /books
-async def test_get_books_empty(auth_client: AsyncClient):
+async def test_get_books_empty(auth_client: AsyncClient) -> None:
     response = await auth_client.get(
         "/books"
     )
@@ -73,7 +75,11 @@ async def test_get_books_empty(auth_client: AsyncClient):
 
 
 # GET /books/export
-async def test_export_books_success(auth_client: AsyncClient, test_user, create_book_factory):
+async def test_export_books_success(
+    auth_client: AsyncClient, 
+    test_user: dict, 
+    create_book_factory: Any
+) -> None:
     await create_book_factory(
         title="first book",
         author="first author"
@@ -97,10 +103,10 @@ async def test_export_books_success(auth_client: AsyncClient, test_user, create_
     df = pd.read_excel(io.BytesIO(response.content), engine="openpyxl")
     assert len(df) == 2
     assert list(df.columns) == ['Title', 'Author', 'Status', 'Note', 'Created_At', 'Finished_At']
-    
+
 
 # POST /books/import
-async def test_import_books_xlsx_success(auth_client: AsyncClient):
+async def test_import_books_xlsx_success(auth_client: AsyncClient) -> None:
     df = pd.DataFrame({
         "title": ["New Book"],
         "author": ["New Author"]
@@ -116,8 +122,8 @@ async def test_import_books_xlsx_success(auth_client: AsyncClient):
         "/books/import",
         files={
             "file": (
-                "test_import.xlsx", 
-                excel_buffer, 
+                "test_import.xlsx",
+                excel_buffer,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         }
@@ -130,7 +136,7 @@ async def test_import_books_xlsx_success(auth_client: AsyncClient):
     assert data["len"] == 1
 
 
-async def test_import_books_csv_success(auth_client: AsyncClient):
+async def test_import_books_csv_success(auth_client: AsyncClient) -> None:
     csv_data = "title,author\nBook CSV,Author CSV"
     csv_buffer = io.BytesIO(csv_data.encode("utf-8"))
 
@@ -148,7 +154,7 @@ async def test_import_books_csv_success(auth_client: AsyncClient):
     assert response.status_code == 200
 
 
-async def test_import_books_invalid_format(auth_client: AsyncClient):
+async def test_import_books_invalid_format(auth_client: AsyncClient) -> None:
     bad_buffer = io.BytesIO(b"fake image data")
 
     response = await auth_client.post(
@@ -166,7 +172,7 @@ async def test_import_books_invalid_format(auth_client: AsyncClient):
 
 
 # PATCH /books/{book_id}
-async def test_update_book_by_owner(auth_client: AsyncClient, create_book_factory):
+async def test_update_book_by_owner(auth_client: AsyncClient, create_book_factory: Any) -> None:
     book = await create_book_factory()
 
     response = await auth_client.patch(
@@ -184,9 +190,9 @@ async def test_update_book_by_owner(auth_client: AsyncClient, create_book_factor
 
 async def test_update_book_not_owner(
     client: AsyncClient,
-    db_session,
-    create_book_factory
-):
+    db_session: Any,
+    create_book_factory: Any
+) -> None:
     book = await create_book_factory(title="Original Name")
 
     raw_password = "anotherpassword123"
@@ -225,7 +231,7 @@ async def test_update_book_not_owner(
     assert data["code"] == "NOT_FOUND"
 
 
-async def test_update_book_not_found(auth_client: AsyncClient):
+async def test_update_book_not_found(auth_client: AsyncClient) -> None:
     response = await auth_client.patch(
         f"/books/{999}",
         json={
@@ -240,9 +246,9 @@ async def test_update_book_not_found(auth_client: AsyncClient):
 
 
 # DELETE /books/{book_id}
-async def test_delete_book_by_owner(auth_client: AsyncClient, create_book_factory):
+async def test_delete_book_by_owner(auth_client: AsyncClient, create_book_factory: Any) -> None:
     book = await create_book_factory()
-    
+
     response = await auth_client.delete(
         f"/books/{book["id"]}"
     )
@@ -255,9 +261,9 @@ async def test_delete_book_by_owner(auth_client: AsyncClient, create_book_factor
 
 async def test_delete_book_not_owner(
     client: AsyncClient,
-    db_session,
-    create_book_factory
-):
+    db_session: Any,
+    create_book_factory: Any
+) -> None:
     book = await create_book_factory(title="Original Client")
 
     raw_password = "anotherpassword123"
@@ -293,7 +299,7 @@ async def test_delete_book_not_owner(
     assert data["code"] == "NOT_FOUND"
 
 
-async def test_delete_book_not_found(auth_client: AsyncClient):
+async def test_delete_book_not_found(auth_client: AsyncClient) -> None:
     response = await auth_client.delete(
         f"/books/{999}"
     )
@@ -305,7 +311,7 @@ async def test_delete_book_not_found(auth_client: AsyncClient):
 
 
 # PATCH /books/{book_id}/rating
-async def test_update_rating_success(auth_client: AsyncClient, create_book_factory):
+async def test_update_rating_success(auth_client: AsyncClient, create_book_factory: Any) -> None:
     book = await create_book_factory()
 
     response = await auth_client.patch(
@@ -314,14 +320,14 @@ async def test_update_rating_success(auth_client: AsyncClient, create_book_facto
             "rating": 5
         }
     )
-    
+
     assert response.status_code == 200
 
     data = response.json()
     assert data["rating"] == 5
 
 
-async def test_update_rating_out_of_bounds(auth_client: AsyncClient, create_book_factory):
+async def test_update_rating_out_of_bounds(auth_client: AsyncClient, create_book_factory: Any) -> None:
     book = await create_book_factory()
 
     response = await auth_client.patch(
@@ -330,5 +336,5 @@ async def test_update_rating_out_of_bounds(auth_client: AsyncClient, create_book
             "rating": 15
         }
     )
-    
+
     assert response.status_code == 422

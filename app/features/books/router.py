@@ -1,18 +1,26 @@
-from fastapi import APIRouter, status, Depends, Query, UploadFile, File
+from typing import Any, Literal
+
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Literal
 from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.enums import BookStatus
 from app.core.dependencies import get_current_user
+from app.core.enums import BookStatus
 from app.core.redis_client import get_redis
-from app.features.books.schemas import BookCreate, BookUpdate, BookResponse, BookRatingUpdate, BookPaginatedResponse, BookStatsResponse
-from app.features.books.service import BookService
+from app.features.books.models import Book
 from app.features.books.repository import BookRepository
+from app.features.books.schemas import (
+    BookCreate,
+    BookPaginatedResponse,
+    BookRatingUpdate,
+    BookResponse,
+    BookStatsResponse,
+    BookUpdate,
+)
+from app.features.books.service import BookService
 from app.features.users.models import User
-
 
 router_books = APIRouter(prefix="/books", tags=["books"])
 
@@ -20,7 +28,7 @@ router_books = APIRouter(prefix="/books", tags=["books"])
 def get_book_service(
     session: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis)
-):
+) -> BookService:
     repository = BookRepository(session)
     return BookService(repository, redis)
 
@@ -34,7 +42,7 @@ async def add_book(
     book_in: BookCreate,
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> Book:
     return await service.create_book(book_in, current_user.id)
 
 
@@ -52,12 +60,12 @@ async def get_all_books(
     offset: int = Query(default=0, ge=0),
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> dict[str, Any]:
     return await service.get_books(
         user_id=current_user.id,
-        status=status, 
-        search=search, 
-        sort=sort, 
+        status=status,
+        search=search,
+        sort=sort,
         order=order,
         limit=limit,
         offset=offset
@@ -71,7 +79,7 @@ async def get_all_books(
 async def get_stats(
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> dict[str, int]:
     return await service.get_stats(current_user.id)
 
 
@@ -82,9 +90,9 @@ async def get_stats(
 async def export_books(
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> StreamingResponse:
     excel_file = await service.get_export_books(current_user.id)
-    
+
     headers = {
         "Content-Disposition": f"attachment; filename=books_user_{current_user.id}.xlsx"
     }
@@ -104,7 +112,7 @@ async def import_books(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> dict[str, Any]:
     contents = await file.read()
 
     return await service.import_books(
@@ -124,7 +132,7 @@ async def update_book(
     payload: BookUpdate,
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> Book:
     return await service.update_book(book_id, current_user.id, payload)
 
 
@@ -135,7 +143,7 @@ async def delete_book(
     book_id: int,
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> dict[str, str]:
     return await service.delete_book(book_id, current_user.id)
 
 
@@ -147,5 +155,5 @@ async def add_rating_book(
     rating: BookRatingUpdate,
     current_user: User = Depends(get_current_user),
     service: BookService = Depends(get_book_service)
-):
+) -> BookResponse | None:
     return await service.rating_add_book(book_id, rating=rating.rating, user_id=current_user.id)

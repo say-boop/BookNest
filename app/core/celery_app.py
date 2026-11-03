@@ -3,7 +3,6 @@ from celery.schedules import crontab
 
 from app.core.config import settings
 
-
 CELERY_BROKER_URL = settings.get_rabbitmq_url()
 
 
