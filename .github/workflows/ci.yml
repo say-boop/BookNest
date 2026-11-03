@@ -77,6 +77,13 @@ jobs:
           REDIS_PORT: 6379
           REDIS_DB: 0
           REDIS_PASSWORD: ""
+          SECRET_KEY: "test_secret_key_for_ci_pipeline"
+          ALGORITHM: "HS256"
+          RABBITMQ_HOST: "127.0.0.1"
+          RABBITMQ_PORT: "5672"
+          RABBITMQ_DEFAULT_USER: "guest"
+          RABBITMQ_DEFAULT_PASSWORD: "guest"
+          CELERY_BROKER_URL: "amqp://guest:guest@127.0.0.1:5672//"
         run: poetry run pytest
 
       - name: Build Docker image
