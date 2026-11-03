@@ -1,24 +1,31 @@
-from sqlalchemy.ext.asyncio import create_async_engine
-from httpx import AsyncClient, ASGITransport
-import pytest_asyncio
-import os
 import asyncio
+import os
 import sys
+from typing import Any
 
-from app.core.config import settings
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine
 
-os.environ["POSTGRES_DB"] = "booknest_test_db"
-os.environ["POSTGRES_HOST"] = settings.POSTGRES_HOST
+os.environ.setdefault("POSTGRES_HOST", "127.0.0.1")
+os.environ.setdefault("POSTGRES_USER", "postgres")
+os.environ.setdefault("POSTGRES_PASSWORD", "postgres_password")
+os.environ.setdefault("POSTGRES_DB", "test_db")
+os.environ.setdefault("REDIS_HOST", "127.0.0.1")
+os.environ.setdefault("REDIS_PORT", "6379")
+os.environ.setdefault("REDIS_DB", "0")
+os.environ.setdefault("REDIS_PASSWORD", "")
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-from app.main import app
+from app.core.config import settings
 from app.core.database import Base, async_session, get_db
-from app.features.users.models import User
-from app.features.books.models import Book
 from app.core.security import Argon2HashPassword
+from app.features.books.models import Book
+from app.features.users.models import User
+from app.main import app
 
 test_engine = create_async_engine(settings.get_database_url())
 
@@ -57,7 +64,7 @@ async def db_session():
 async def client(db_session):
     async def override_get_db():
         yield db_session
-    
+
     app.dependency_overrides[get_db] = override_get_db
 
     async with AsyncClient(
@@ -99,8 +106,8 @@ async def test_user(db_session):
 )
 async def auth_client(
     client: AsyncClient,
-    test_user
-):
+    test_user: Any
+) -> Any:
     login_data = {
         "username": test_user["email"],
         "password": test_user["password"]

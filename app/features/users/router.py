@@ -1,14 +1,13 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.features.users.models import User
-from app.features.users.schemas import UserLogin, UserRegister, UserResponse, Token
 from app.features.users.repository import UserRepository
+from app.features.users.schemas import Token, UserLogin, UserRegister, UserResponse
 from app.features.users.service import UserService
-
 
 router_users = APIRouter(prefix="/users", tags=["users"])
 
@@ -21,7 +20,7 @@ router_users = APIRouter(prefix="/users", tags=["users"])
 async def register_user(
     user_in: UserRegister,
     session: AsyncSession = Depends(get_db)
-):
+) -> User:
     repository = UserRepository(session)
     service = UserService(repository)
     return await service.register_user(user_in)
@@ -35,7 +34,7 @@ async def register_user(
 async def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_db)
-):
+) -> dict[str, str]:
     repository = UserRepository(session)
     service = UserService(repository)
 
@@ -59,5 +58,5 @@ async def login_user(
 )
 async def get_user(
     current_user: User = Depends(get_current_user)
-):
+) -> User:
     return current_user

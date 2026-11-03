@@ -1,10 +1,14 @@
-from app.features.users.models import User
-from app.features.users.schemas import UserRegister, UserLogin
-from app.features.users.repository import UserRepository
-
+from app.core.exceptions.user_exp import (
+    UserAlreadyExistsError,
+    UserIncorrectData,
+    UserNotFoundError,
+    UserNotVerifiedEmail,
+)
+from app.core.generate_jwt import create_access_token
 from app.core.security import Argon2HashPassword
-from app.core.exceptions.user_exp import UserAlreadyExistsError, UserNotFoundError, UserIncorrectData, UserNotVerifiedEmail
-from app.core.generate_jwt import create_access_token, verify_access_token
+from app.features.users.models import User
+from app.features.users.repository import UserRepository
+from app.features.users.schemas import UserLogin, UserRegister
 
 
 class UserService:
@@ -18,7 +22,7 @@ class UserService:
     ) -> User:
         user_data = user_in.model_dump(exclude={"password"})
         user = User(**user_data)
-        
+
         result_get_user_repo = await self.repository.get_by_email(user_in.email)
 
         if result_get_user_repo is not None:
@@ -55,7 +59,7 @@ class UserService:
 
         if not check_password:
             raise UserIncorrectData(
-                message=f"Неверная почта или пароль."
+                message="Неверная почта или пароль."
             )
 
         if user.is_verified:
@@ -66,5 +70,5 @@ class UserService:
         token = create_access_token(
             data={"sub": str(user.id)}
         )
-        
+
         return token

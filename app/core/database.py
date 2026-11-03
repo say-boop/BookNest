@@ -1,10 +1,10 @@
+from collections.abc import AsyncGenerator
+
 from sqlalchemy import MetaData
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
-from typing import AsyncGenerator
 
 from app.core.config import settings
-
 
 DATABASE_URL = settings.get_database_url()
 
@@ -34,7 +34,7 @@ class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
-async def init_db():
+async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

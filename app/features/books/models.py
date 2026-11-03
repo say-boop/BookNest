@@ -1,14 +1,15 @@
 from __future__ import annotations
-from sqlalchemy import String, func, CheckConstraint, Integer, ForeignKey, Computed, Index
-from sqlalchemy.dialects.postgresql import TSVECTOR
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Enum as SQLEnum
+
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from sqlalchemy import CheckConstraint, Computed, ForeignKey, Index, Integer, String, func
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.core.database import Base
 from app.core.enums import BookStatus
-
 
 if TYPE_CHECKING:
     from app.features.users.models import User
@@ -47,7 +48,7 @@ class Book(Base):
     )
 
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    owner: Mapped["User"] = relationship(back_populates="books")
+    owner: Mapped[User] = relationship(back_populates="books")
 
     search_vector: Mapped[Any] = mapped_column(
         TSVECTOR,

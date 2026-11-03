@@ -1,16 +1,17 @@
 from argon2 import PasswordHasher
 
-
 ph = PasswordHasher()
 
 
 class Argon2HashPassword:
+    @staticmethod
     def hash_password(
         password: str
     ) -> str:
         return ph.hash(password)
 
 
+    @staticmethod
     def verify_password(
         plain_password: str,
         hashed_password: str

@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class BookStatus(str, Enum):
+class BookStatus(StrEnum):
     want_to_read = "want_to_read"
     reading = "reading"
     read = "read"

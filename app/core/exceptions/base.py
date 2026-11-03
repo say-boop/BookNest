@@ -1,9 +1,9 @@
 class AppError(Exception):
-    status_code = None
-    error_code = None
-    
+    status_code: int | None = None
+    error_code: str | None = None
+
     def __init__(
-        self, 
+        self,
         message: str,
         details: str | None = None
     ):

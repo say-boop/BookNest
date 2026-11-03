@@ -1,13 +1,13 @@
+from typing import Any
+
 from httpx import AsyncClient
 
 from app.features.books.models import Book
 from app.features.users.models import User
-from app.core.generate_jwt import create_access_token
-from app.core.security import Argon2HashPassword
 
 
 # Filtering and Searching
-async def test_get_books_filter_by_status(auth_client: AsyncClient, create_book_factory):
+async def test_get_books_filter_by_status(auth_client: AsyncClient, create_book_factory: Any) -> None:
     await create_book_factory(status="read")
     await create_book_factory(status="read")
     await create_book_factory(status="want_to_read")
@@ -24,7 +24,7 @@ async def test_get_books_filter_by_status(auth_client: AsyncClient, create_book_
         assert item["status"] == "read"
 
 
-async def test_get_books_search_buy_title_or_author(auth_client: AsyncClient, create_book_factory):
+async def test_get_books_search_buy_title_or_author(auth_client: AsyncClient, create_book_factory: Any) -> None:
     await create_book_factory(title="Garry")
     await create_book_factory(author="Rouling")
     await create_book_factory(author="Master")
@@ -42,7 +42,7 @@ async def test_get_books_search_buy_title_or_author(auth_client: AsyncClient, cr
 
 
 # Sorting and Pagination
-async def test_get_books_soting_by_rating_desc(auth_client: AsyncClient, create_book_factory):
+async def test_get_books_soting_by_rating_desc(auth_client: AsyncClient, create_book_factory: Any) -> None:
     await create_book_factory(rating=3)
     await create_book_factory(rating=4)
     await create_book_factory(rating=5)
@@ -61,7 +61,7 @@ async def test_get_books_soting_by_rating_desc(auth_client: AsyncClient, create_
         count -= 1
 
 
-async def test_get_books_pagination(auth_client: AsyncClient, create_book_factory):
+async def test_get_books_pagination(auth_client: AsyncClient, create_book_factory: Any) -> None:
     await create_book_factory(title="first")
     await create_book_factory(title="second")
     await create_book_factory(title="three")
@@ -77,7 +77,7 @@ async def test_get_books_pagination(auth_client: AsyncClient, create_book_factor
 
 
 # GET /books/stats
-async def test_get_books_stats_success(auth_client: AsyncClient, create_book_factory):
+async def test_get_books_stats_success(auth_client: AsyncClient, create_book_factory: Any) -> None:
     await create_book_factory(status="read")
     await create_book_factory(status="want_to_read")
     await create_book_factory(status="read")
@@ -94,10 +94,10 @@ async def test_get_books_stats_success(auth_client: AsyncClient, create_book_fac
 
 
 async def test_get_books_stats_isolation(
-    auth_client: AsyncClient, 
-    db_session, 
-    create_book_factory
-):
+    auth_client: AsyncClient,
+    db_session: Any,
+    create_book_factory: Any
+) -> None:
     await create_book_factory(status="read")
     await create_book_factory(status="read")
 
@@ -131,7 +131,7 @@ async def test_get_books_stats_isolation(
     assert data["read"] == 2
 
 
-async def test_get_books_stats_empty(auth_client: AsyncClient):
+async def test_get_books_stats_empty(auth_client: AsyncClient) -> None:
     response = await auth_client.get(
         "/books/stats"
     )
@@ -140,5 +140,5 @@ async def test_get_books_stats_empty(auth_client: AsyncClient):
 
     data = response.json()
 
-    for key, value in data.items():
+    for _, value in data.items():
         assert value == 0
