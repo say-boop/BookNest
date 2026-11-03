@@ -1,5 +1,6 @@
-from httpx import AsyncClient
 from typing import Any
+
+from httpx import AsyncClient
 
 from app.features.books.models import Book
 from app.features.users.models import User

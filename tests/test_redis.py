@@ -1,6 +1,7 @@
+from typing import Any
+
 import pytest
 from httpx import AsyncClient
-from typing import Any
 
 from app.core.redis_client import get_redis
 

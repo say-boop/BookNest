@@ -1,8 +1,8 @@
 from datetime import timedelta
+from typing import Any
 
 from httpx import AsyncClient
 from sqlalchemy import delete, select
-from typing import Callable, Any
 
 from app.core.generate_jwt import create_access_token
 from app.features.users.models import User

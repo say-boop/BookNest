@@ -1,8 +1,8 @@
 import io
+from typing import Any
 
 import pandas as pd
 from httpx import AsyncClient
-from typing import Callable, Any
 
 from app.core.generate_jwt import create_access_token
 from app.core.security import Argon2HashPassword
@@ -76,8 +76,8 @@ async def test_get_books_empty(auth_client: AsyncClient) -> None:
 
 # GET /books/export
 async def test_export_books_success(
-    auth_client: AsyncClient, 
-    test_user: dict, 
+    auth_client: AsyncClient,
+    test_user: dict,
     create_book_factory: Any
 ) -> None:
     await create_book_factory(
