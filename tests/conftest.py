@@ -20,8 +20,8 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-from app.core.database import Base, async_session, get_db
 from app.core.config import settings
+from app.core.database import Base, async_session, get_db
 from app.core.security import Argon2HashPassword
 from app.features.books.models import Book
 from app.features.users.models import User
